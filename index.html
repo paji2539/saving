@@ -42,6 +42,15 @@ buildDeck();render();
 function upgradeDeckNavigation(){
   const deck=document.querySelector('.deck');
   if(!deck)return;
+  const originalSlides=[...deck.querySelectorAll('.slide')];
+  const planInner=originalSlides[1].querySelector('.slide-inner');
+  const projectionInner=originalSlides[3].querySelector('.slide-inner');
+  const projection=document.createElement('div');
+  projection.className='projection-stack';
+  while(projectionInner.firstChild)projection.append(projectionInner.firstChild);
+  planInner.classList.add('plan-layout');
+  planInner.append(projection);
+  originalSlides[3].remove();
   const slides=[...deck.querySelectorAll('.slide')];
   const dots=deck.querySelector('.deck-dots');
   const nav=deck.querySelector('.deck-nav');
@@ -56,13 +65,21 @@ function upgradeDeckNavigation(){
     .deck-nav button:focus-visible,.deck-dots button:focus-visible,.start:focus-visible{outline:3px solid #d9ef72;outline-offset:3px}
     .deck-dots button{transition:transform .2s ease,background .2s ease}.deck-dots button[aria-current="step"]{background:#176b46;transform:scale(1.35)}
     .deck-progress{position:fixed;z-index:10;left:0;right:0;top:0;height:4px;background:rgba(23,107,70,.12)}
-    .deck-progress span{display:block;width:20%;height:100%;background:#176b46;transition:width .3s ease}
+    .deck-progress span{display:block;width:25%;height:100%;background:#176b46;transition:width .3s ease}
+    /* Step 2 combines assumptions with the forecast. Both it and the detail view scroll on every screen size. */
+    .slide:nth-child(2),.slide:nth-child(4){align-items:flex-start;overflow-y:auto;overscroll-behavior:contain;padding-bottom:95px;scrollbar-gutter:stable}
+    .slide:nth-child(2) .slide-inner,.slide:nth-child(4) .slide-inner{margin:auto}
+    .plan-layout{display:grid;direction:ltr;grid-template-columns:minmax(110px,138px) minmax(0,1fr);grid-template-areas:"kicker kicker" "heading heading" "assumptions projection";gap:20px;align-items:start}
+    .plan-layout>.slide-kicker{grid-area:kicker}.plan-layout>h2{grid-area:heading}.plan-layout>.panel{grid-area:assumptions;position:sticky;top:28px;width:auto;min-width:0;max-height:calc(100svh - 150px);overflow-y:auto}.plan-layout>.panel .control-grid{grid-template-columns:1fr}.plan-layout>.panel .field.wide{grid-column:auto}.projection-stack{grid-area:projection;min-width:0}.projection-stack .hero,.projection-stack .chart-card{max-width:none}.projection-stack .chart-card{margin-top:17px}
+    @media(max-width:700px){.plan-layout{grid-template-columns:1fr;grid-template-areas:"kicker" "heading" "assumptions" "projection"}.plan-layout>.panel{position:static;max-height:none;overflow:visible}}
     @media(prefers-reduced-motion:reduce){.slide,.deck-progress span,.deck-dots button{transition:none!important}}
   </style>`);
   deck.setAttribute('tabindex','-1');
   deck.setAttribute('aria-label','Retirement planner walkthrough');
   deck.insertAdjacentHTML('afterbegin','<div class="deck-progress" aria-hidden="true"><span></span></div><p class="sr-only" aria-live="polite" aria-atomic="true"></p>');
   const live=deck.querySelector('[aria-live]'),progress=deck.querySelector('.deck-progress span');
+  dots.innerHTML=slides.map((_,index)=>`<button aria-label="Go to step ${index+1}" data-page="${index}"></button>`).join('');
+  slides[3].querySelector('.slide-kicker').textContent='04 · See the details';
   slides.forEach((slide,index)=>{slide.setAttribute('role','group');slide.setAttribute('aria-roledescription','step');slide.setAttribute('aria-label',`Step ${index+1} of ${slides.length}`);slide.setAttribute('aria-hidden',index?'true':'false');slide.setAttribute('inert','');slide.querySelector('h1,h2')?.setAttribute('tabindex','-1');});
 
   function show(target,{focus=false,historyMode='push'}={}){
